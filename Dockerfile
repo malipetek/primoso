@@ -1,25 +1,14 @@
-FROM node:18.7.0-alpine3.15
-
-ARG PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL}
-ENV PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL}
-ARG PUBLIC_SUPABASE_PUBLIC_KEY=${PUBLIC_SUPABASE_PUBLIC_KEY}
-ENV PUBLIC_SUPABASE_PUBLIC_KEY=${PUBLIC_SUPABASE_PUBLIC_KEY}
-ARG PRIVATE_SUPABASE_PRIVATE_KEY=${PRIVATE_SUPABASE_PRIVATE_KEY}
-ENV PRIVATE_SUPABASE_PRIVATE_KEY=${PRIVATE_SUPABASE_PRIVATE_KEY}
-
+FROM node:lts-alpine as build
 WORKDIR /app
-
-COPY package.json yarn.lock ./
-
-# Install dependencies using Yarn
-RUN yarn install --frozen-lockfile
-
+COPY ./package*.json ./
+RUN npm install
 COPY . .
+RUN npm run build
 
-# Build the project and remove unnecessary dependencies
-RUN yarn build && yarn install --production
-
-ENV PORT 80
-EXPOSE 80
-
-CMD ["node", "build"]
+FROM node:lts-alpine AS production
+COPY --from=build /app/build .
+COPY --from=build /app/package.json .
+COPY --from=build /app/package-lock.json .
+RUN npm ci --omit dev
+EXPOSE 3000
+CMD ["node", "."]
