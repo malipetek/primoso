@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { PRIVATE_SUPABASE_PRIVATE_KEY } from '$env/static/private';
+import { createDirectus, rest, staticToken } from '@directus/sdk';
+import { PUBLIC_DIRECTUS_URL } from '$env/static/public';
+import { PRIVATE_DIRECTUS_PRIVATE_KEY } from '$env/static/private';
 
-export default createClient(PUBLIC_SUPABASE_URL, PRIVATE_SUPABASE_PRIVATE_KEY)
+export default createDirectus(PUBLIC_DIRECTUS_URL).with(rest()).with(staticToken(PRIVATE_DIRECTUS_PRIVATE_KEY));

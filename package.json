@@ -13,9 +13,10 @@
     "format": "prettier --plugin-search-dir . --write ."
   },
   "dependencies": {
+    "@directus/sdk": "^14.0.0",
     "@fontsource/fira-code": "^5.0.5",
     "@iconify/svelte": "^2.2.1",
-    "@primocms/builder": "^0.1.54",
+    "@primocms/builder": "./primoso-builder",
     "@rollup/browser": "^3.28.0",
     "@supabase/auth-helpers-sveltekit": "^0.10.2",
     "@supabase/supabase-js": "^2.31.0",

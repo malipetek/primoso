@@ -1,23 +1,24 @@
-import supabase from './index';
+import directus from './index';
+import { passwordRequest } from '@directus/sdk';
 
 export async function signUp({ email, password }) {
-	const res = await supabase.auth.signUp({ email, password });
-	return res;
+	// const res = await directus.auth.signUp({ email, password });
+	return { error: 'there is no signup in directus api' };
 }
 
 export async function signOut() {
-	await supabase.auth.signOut();
+	await directus.logout();
 }
 
 export async function signIn({ email, password }) {
-	return await supabase.auth.signInWithPassword({ email, password });
+	return await directus.login(email, password);
 }
 
 export async function resetPassword(email) {
-	return supabase.auth.api.resetPasswordForEmail(email);
+	return directus.request(passwordRequest(email));
 }
 
-export const auth = supabase.auth;
+export const auth = directus.auth;
 
 export default {
 	signUp,
