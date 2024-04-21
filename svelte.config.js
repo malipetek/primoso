@@ -11,7 +11,13 @@ const config = {
 	kit: {
 		adapter: adapter({
 			out: 'build'
-		})
+		}),
+		prerender: {
+			entries: [],
+			crawl: false,
+			handleMissingId: 'ignore',
+			handleHttpError: 'ignore'
+		},
 	},
 	vitePlugin: {
 		inspector: false
