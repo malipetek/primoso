@@ -33,16 +33,15 @@ export const actions = {
       console.error(error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
 
     // if invitation exists, send signup to server to create user and add to workspace/editors
     return {
       success: true,
-      error: null
+      error: null,
     };
-
   },
   sign_up: async ({ request, locals: { supabase } }) => {
     // Only the server owner signs up, all others are invited (i.e. auto-signed up)
@@ -52,15 +51,18 @@ export const actions = {
     if (!success) {
       return {
         success: false,
-        error
+        error,
       };
     }
 
-    const count = await (supabase_admin.from('users').select('count')).then(({ data }) => data?.[0]['count']);
+    const count = await supabase_admin
+      .from('users')
+      .select('count')
+      .then(({ data }) => data?.[0]['count']);
     if (count > 0) {
       return {
         success: false,
-        error: 'Server already initialized. Sign in as the server owner to invite users.'
+        error: 'Server already initialized. Sign in as the server owner to invite users.',
       };
     }
 
@@ -79,49 +81,50 @@ export const actions = {
     if (auth_error) {
       return {
         success: false,
-        error: auth_error.message
+        error: auth_error.message,
       };
     } else if (res) {
-
       // @ts-ignore
       const { error: signin_error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (!signin_error) {
         // disable email confirmation and add user
-        await supabase_admin
-          .from('users')
-          .insert({
-            id: res.user?.id,
-            email: res.user?.email
-          });
+        await supabase_admin.from('users').insert({
+          id: res.user?.id,
+          email: res.user?.email,
+        });
 
         // add user to server_members as admin
         await supabase_admin.from('server_members').insert({
           user: res.user?.id,
           role: 'DEV',
-          admin: true
+          admin: true,
         });
       }
 
       return {
         success: !signin_error,
-        error: signin_error?.message
+        error: signin_error?.message,
       };
     }
-
   },
 };
 
 async function server_provisioned() {
-  const { status, error } = await supabase_admin
-    .from('sites')
-    .select();
+  const { status, error } = await supabase_admin.from('sites').select();
   if (status === 0) {
-    return { success: false, error: `Could not connect your Supabase backend. Ensure you've correctly connected your environment variables.` };
+    return {
+      success: false,
+      error: `Could not connect your Supabase backend. Ensure you've correctly connected your environment variables.`,
+    };
   } else if (status === 404) {
     console.error(error);
-    return { success: false, error: `Your Supabase backend is connected but incorrectly provisioned. Ensure you've run the setup schema outlined in the Docs.` };
-  } else if (status === 200) { // has sites or no sites
+    return {
+      success: false,
+      error: `Your Supabase backend is connected but incorrectly provisioned. Ensure you've run the setup schema outlined in the Docs.`,
+    };
+  } else if (status === 200) {
+    // has sites or no sites
     return { success: true, error: null };
   } else {
     return { success: false, error: `Unknown error` };

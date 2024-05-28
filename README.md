@@ -12,7 +12,7 @@
 
 <p align="center">
     <a href="https://primocms.org/">Primocms.org</a> •
-    <a href="https://forum.primo.so">Forum</a> •
+    <a href="https://discord.com/invite/DMQshmek8m">Discord</a> •
     <a href="https://docs.primocms.org/">Docs</a> •
     <a href="https://primocms.org#section-b18b744b-92ba-4bf9-96fd-4d86c0a842b8">Newsletter</a> •
     <a href="https://www.youtube.com/@primocms">YouTube</a>
@@ -44,7 +44,7 @@ Primo depends on several [freemium] third-party services for easy hosting, authe
 
 Third-party services (all can be signed into with Github):
 
-- A modern web host like [**Vercel**](<https://vercel.com/>) or [**Netlify**](<https://netlify.com>) to host the Primo application & published sites.
+- A modern web host like [**Vercel**](<https://vercel.com/>) or [**Netlify**](<https://netlify.com>) to host the Primo application & published sites (note that Cloudflare Pages is currently [unsupported](https://github.com/primocms/primo/issues/365) for hosting Primo, but you can still use it for your sites).
 
 - A [**Supabase**](<https://supabase.com>) account to manage your server's authentication, database, and file storage.
 
