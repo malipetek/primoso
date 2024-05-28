@@ -18,8 +18,6 @@ export async function resetPassword(email) {
 	return directus.request(passwordRequest(email));
 }
 
-export const auth = directus.auth;
-
 export default {
 	signUp,
 	signIn,

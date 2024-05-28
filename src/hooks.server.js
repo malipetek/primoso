@@ -1,53 +1,58 @@
-import '$lib/supabase'
-import supabase_admin from '$lib/supabase/admin'
-import { createSupabaseServerClient } from '@supabase/auth-helpers-sveltekit'
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLIC_KEY } from '$env/static/public'
+import { createDirectus, rest, staticToken, authentication, readItems } from '@directus/sdk';
+import { PUBLIC_DIRECTUS_URL, PUBLIC_DIRECTUS_PUBLIC_KEY } from '$env/static/public';
 
 /** @type {import('@sveltejs/kit').Handle} */
 export async function handle({ resolve, event }) {
-  event.locals.supabase = createSupabaseServerClient({
-    supabaseUrl: PUBLIC_SUPABASE_URL,
-    supabaseKey: PUBLIC_SUPABASE_PUBLIC_KEY,
-    event,
-  })
+  // Initialize Directus client with REST and static token support
+  const directus = createDirectus(PUBLIC_DIRECTUS_URL)
+    .with(rest())
+    .with(staticToken(PUBLIC_DIRECTUS_PUBLIC_KEY))
+    .with(authentication());
+
+  event.locals.directus = directus;
 
   event.locals.getSession = async () => {
-    const {
-      data: { session },
-    } = await event.locals.supabase.auth.getSession()
-    return session
-  }  
+    const token = await directus.getToken();
+    return token ? { accessToken: token } : null;
+  };
 
   const response = await resolve(event, {
     filterSerializedResponseHeaders(name) {
-      return name === 'content-range'
+      return name === 'content-range';
     },
-  })
+  });
 
-  const is_preview = event.url.searchParams.has('preview')
+  const is_preview = event.url.searchParams.has('preview');
   if (is_preview) {
-    // retrieve site and page from db
-    const [{data:site}, {data:page}] = await Promise.all([
-      supabase_admin.from('sites').select('id, url').eq('url', event.params.site).single(),
-      supabase_admin.from('pages').select('id, url, site!inner(*)').match({      
-        url: event.params.page || 'index',
-        'site.url': event.params.site
-      }).single()
-    ])
-    
-    if (!site || !page) return new Response('no page found')
+    const [{ data: site }, { data: page }] = await Promise.all([
+      directus.request(readItems('sites', {
+        filter: { url: { _eq: event.params.site } },
+        fields: ['id', 'url'],
+        single: true
+      })),
+      directus.request(readItems('pages', {
+        filter: {
+          url: { _eq: event.params.page || 'index' },
+          'site.url': { _eq: event.params.site }
+        },
+        fields: ['id', 'url', 'site.*'],
+        single: true
+      }))
+    ]);
 
-    const {data:file} = await supabase_admin.storage.from('sites').download(`${site.id}/${page.id}/index.html`)
+    if (!site || !page) return new Response('no page found');
 
-    return new Response(file ||  'no preview found', {
-      headers: {  
+    const file = await directus.request(`${PUBLIC_DIRECTUS_URL}/assets/${site.id}/${page.id}/index.html`);
+
+    return new Response(file || 'no preview found', {
+      headers: {
         'Content-Type': 'text/html;charset=UTF-8',
         'Access-Control-Allow-Origin': '*',
       },
-    })
+    });
   }
 
-  if(event.request.method === 'OPTIONS') {
+  if (event.request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, DELETE',

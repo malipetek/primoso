@@ -1,6 +1,6 @@
-import directus from '$lib/supabase';
+import directus from '$lib/directus';
 import { readItems, createItem } from '@directus/sdk';
-import { getFiles } from '$lib/supabase/storage';
+import { getFiles } from '$lib/directus/storage';
 import axios from 'axios';
 import { invalidate } from '$app/navigation';
 

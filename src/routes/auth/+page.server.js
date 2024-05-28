@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import directus from '$lib/supabase/admin';
+import directus from '$lib/directus/admin';
 import { PUBLIC_DIRECTUS_URL } from '$env/static/public';
 import { readItems, login, aggregate, createUser, createItem } from '@directus/sdk';
 /** @type {import('@sveltejs/kit').Load} */

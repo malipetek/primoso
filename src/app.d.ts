@@ -1,13 +1,17 @@
-import { SupabaseClient, Session } from '@supabase/supabase-js'
+import { RestClient, AuthenticationStorage } from '@directus/sdk'
 import { Database } from './DatabaseDefinitions'
 
-declare global {
-	namespace App {
-		interface Locals {
-			supabase: SupabaseClient<Database>
-			getSession(): Promise<Session | null>
+declare global
+{
+	namespace App
+	{
+		interface Locals
+		{
+			directus: RestClient<Database>
+			getSession (): Promise<Session | null>
 		}
-		interface PageData {
+		interface PageData
+		{
 			session: Session | null
 		}
 		// interface Error {}
