@@ -1,6 +1,9 @@
 export const prerender = false;
 import { redirect } from '@sveltejs/kit';
-import supabase_admin from '$lib/supabase/admin';
+import { getAllUsers, getUsersCount, getAllSites } from '$lib/cmsprovider/admin';
+import createAuth from '$lib/cmsprovider/auth';
+
+const auth = createAuth();
 
 /** @type {import('@sveltejs/kit').Load} */
 export async function load({ url, parent }) {
@@ -10,7 +13,7 @@ export async function load({ url, parent }) {
   const joining_server = url.pathname.includes('set-password');
 
   if (!session && !signing_up && !joining_server) {
-    const { data: existing_users } = await supabase_admin.from('users').select('*');
+    const existing_users = await getAllUsers();
     const initiated = existing_users?.length > 0;
     if (!initiated) {
       throw redirect(303, '?signup');
@@ -22,12 +25,16 @@ export async function load({ url, parent }) {
 
 /** @type {import('./$types').Actions} */
 export const actions = {
-  sign_in: async ({ request, locals: { supabase } }) => {
+  sign_in: async ({ request, locals: { cmsAdmin } }) => {
     const data = await request.formData();
     const email = data.get('email');
     const password = data.get('password');
-
-    const { data: res, error } = await supabase.auth.signInWithPassword({ email, password });
+    let error;
+    try {
+      return await auth.signIn({ email, password });
+    } catch (err) {
+      error = err;
+    }
 
     if (error) {
       console.error(error);
@@ -55,10 +62,7 @@ export const actions = {
       };
     }
 
-    const count = await supabase_admin
-      .from('users')
-      .select('count')
-      .then(({ data }) => data?.[0]['count']);
+    const count = await getUsersCount();
     if (count > 0) {
       return {
         success: false,
@@ -111,7 +115,7 @@ export const actions = {
 };
 
 async function server_provisioned() {
-  const { status, error } = await supabase_admin.from('sites').select();
+  const { status, error } = await getAllSites();
   if (status === 0) {
     return {
       success: false,

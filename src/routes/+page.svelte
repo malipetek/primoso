@@ -5,7 +5,7 @@
   import DashboardToolbar from '$lib/components/DashboardToolbar.svelte'
   import SiteThumbnail from '$lib/components/SiteThumbnail.svelte'
   import { show, hide } from '$lib/components/Modal.svelte'
-  import * as actions from '$lib/actions'
+  import * as actions from '$lib/cmsprovider/actions'
   import { invalidate } from '$app/navigation'
 
   /** @type {{
@@ -15,6 +15,8 @@
    config: any
   }} */
   export let data
+
+  $: data, console.log('data ', data)
 
   function beginInvitation(site) {
     show({
@@ -31,7 +33,7 @@
       id: 'CREATE_SITE',
       props: {
         onSuccess: async (site, preview) => {
-          await actions.sites.create(site, preview)
+          await actions.sites.createSite(site, preview, data.cmsprovider)
           invalidate('app:data')
           hide()
         },
@@ -62,6 +64,7 @@
       <ul class="sites">
         {#each data.sites as site, i (site.id)}
           <li>
+            <div>{site.url}</div>
             <a class="site-link" href={site.url}>
               <SiteThumbnail {site} />
             </a>
@@ -69,7 +72,8 @@
               <div class="site-name">
                 {#if siteBeingEdited.id === site.id}
                   <form
-                    on:submit|preventDefault={() => (siteBeingEdited = { id: null, element: null })}
+                    on:submit|preventDefault={() =>
+                      (siteBeingEdited = { id: null, element: null })}
                   >
                     <input
                       bind:this={siteBeingEdited.element}
@@ -100,7 +104,10 @@
               {/if}
               {#if $page.data.user.admin}
                 <div class="buttons">
-                  <button on:click={() => beginInvitation(site)} class="site-button">
+                  <button
+                    on:click={() => beginInvitation(site)}
+                    class="site-button"
+                  >
                     <Icon icon="clarity:users-solid" />
                     <span>Collaborators</span>
                   </button>
@@ -115,7 +122,10 @@
                     <Icon icon="material-symbols:edit-square-outline-rounded" />
                     <span>Rename</span>
                   </button>
-                  <button class="site-button" on:click={() => delete_site(site)}>
+                  <button
+                    class="site-button"
+                    on:click={() => delete_site(site)}
+                  >
                     <Icon icon="pepicons-pop:trash" />
                     <span>Delete</span>
                   </button>
@@ -124,7 +134,7 @@
             </div>
           </li>
         {/each}
-        {#if data.user.server_member}
+        {#if data.user.server_member || data.user.role.name == 'Administrator'}
           <li>
             <button class="create-site" on:click={createSite}>
               {#if loading}

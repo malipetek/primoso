@@ -1,81 +1,43 @@
-import { redirect } from '@sveltejs/kit'
-
+import { redirect } from '@sveltejs/kit';
+import { getSitePage, getDataSymbols } from '$lib/cmsprovider/client';
 /** @type {import('@sveltejs/kit').Load} */
 export async function load({ depends, params, parent }) {
-  depends('app:data')
+  depends('app:data');
 
-  const { supabase, session } = await parent()
+  const { cmsprovider, session } = await parent();
 
   if (!session) {
     // the user is not signed in
-    throw redirect(303, '/auth')
+    throw redirect(303, '/auth');
   }
 
+  console.log('site layout load fn');
   // Get site and page
-  const site_url = params['site']
-  const client_params = params['page']?.split('/') || []
-  const page_url = client_params.pop() || 'index'
-  const parent_url = client_params.pop() || null
+  const site_url = params['site'];
+  const client_params = params['page']?.split('/') || [];
+  const page_url = client_params.pop() || 'index';
+  const parent_url = client_params.pop() || null;
 
-  let site, page
-  if (parent_url) {
-    const res = await Promise.all([
-      supabase.from('sites').select().filter('url', 'eq', site_url).single(),
-      supabase
-        .from('pages')
-        .select(`*, site!inner(id, url), parent!inner(id, url)`)
-        .match({
-          url: page_url,
-          'site.url': site_url,
-          'parent.url': parent_url,
-        })
-        .single(),
-    ])
-    site = res[0]['data']
-    page = res[1]['data']
-  } else {
-    const res = await Promise.all([
-      supabase.from('sites').select().filter('url', 'eq', site_url).single(),
-      supabase
-        .from('pages')
-        .select(`*, site!inner(id, url)`)
-        .match({
-          url: page_url,
-          'site.url': site_url,
-        })
-        .is('parent', null)
-        .single(),
-    ])
-    site = res[0]['data']
-    page = res[1]['data']
-  }
+  let site, page;
 
+  // Initialize an array to hold the promises for fetching site and page data
+  const res = await getSitePage({ site_url, page_url, parent_url });
+  console.log('res ', res);
+  ({ site, page } = res);
+
+  // Redirect logic based on the existence of the site and page data
   if (!site) {
-    throw redirect(303, '/')
+    // If the site data is not found, redirect the user to the home page
+    throw redirect(303, '/');
   } else if (!page && page_url !== 'index') {
-    throw redirect(303, `/${site_url}/index`)
+    // If the page data is not found and the provided page_url is not 'index',
+    // redirect the user to the site's index page
+    throw redirect(303, `/${site_url}/index`);
   }
 
-  // Get sorted pages, symbols, and sections
-  const [{ data: pages }, { data: symbols }, { data: sections }] = await Promise.all([
-    supabase
-      .from('pages')
-      .select()
-      .match({ site: site.id })
-      .order('created_at', { ascending: true }),
-    supabase.from('symbols').select().match({ site: site.id }).order('index', { ascending: true }),
-    supabase
-      .from('sections')
-      .select('id, page, index, content, symbol')
-      .match({ page: page['id'] })
-      .order('index', { ascending: true }),
-  ])
-
-  return {
-    site,
-    page,
-    pages,
-    sections,
-    symbols,
-  }
+  // Initialize an array to hold the promises for fetching additional data: pages, symbols, and sections
+  let { pages, symbols, sections } = await getDataSymbols({ site, page });
+  console.log('data symbols ', pages, symbols, sections);
+  // Return the fetched data as an object
+  return { site, page, pages, symbols, sections };
 }

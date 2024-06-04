@@ -1,62 +1,26 @@
-import { PUBLIC_SUPABASE_PUBLIC_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { createSupabaseLoadClient } from '@supabase/auth-helpers-sveltekit';
+import createClient, { getSession, getAllSites, getUserRecords } from '$lib/cmsprovider/client';
 import { redirect } from '@sveltejs/kit';
+import { building } from '$app/environment';
 
 /** @type {import('@sveltejs/kit').Load} */
 export async function load(event) {
-  event.depends('supabase:auth');
+  event.depends('cmsprovider:auth');
   event.depends('app:data');
 
   if (building) {
     return;
   }
-  const supabase = createSupabaseLoadClient({
-    supabaseUrl: PUBLIC_SUPABASE_URL,
-    supabaseKey: PUBLIC_SUPABASE_PUBLIC_KEY,
-    event: { fetch },
-    serverSession: event?.data?.session,
-  });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const cmsprovider = createClient(event?.data?.session);
+  const session = await getSession();
 
   if (!session && !event.url.pathname.startsWith('/auth')) {
     throw redirect(303, '/auth');
   } else if (session) {
     // const site = event.params['site']
-    const { sites, user } = await Promise.all([
-      supabase
-        .from('sites')
-        .select('id, name, url, active_deployment, collaborators (*)')
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('users')
-        .select('*, server_members (admin, role), collaborators (role)')
-        .eq('id', session.user.id)
-        .single(),
-    ]).then(([{ data: sites }, { data: user }]) => {
-      const [server_member] = user.server_members;
-      const [collaborator] = user.collaborators;
-
-      const user_final = server_member
-        ? {
-          ...user,
-          server_member: true,
-          admin: server_member.admin,
-          role: server_member.role,
-        }
-        : {
-          ...user,
-          server_member: false,
-          admin: false,
-          role: collaborator.role,
-        };
-
-      return {
-        sites: sites || [],
-        user: user_final,
-      };
-    });
+    const [sites, user] = await Promise.all([
+      getAllSites(),
+      getUserRecords(session?.user?.id || session),
+    ]);
 
     // TODO: do this w/ sql
     const user_sites = sites?.filter(
@@ -68,7 +32,7 @@ export async function load(event) {
     );
 
     return {
-      supabase,
+      cmsprovider,
       session,
       user,
       sites: user_sites,

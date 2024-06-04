@@ -1,9 +1,10 @@
 export const prerender = false;
 /** @type {import('@sveltejs/kit').ServerLoad} */
 import { redirect } from '@sveltejs/kit';
+import { getSymbol } from '$lib/cmsprovider/admin';
 
-export const load = async ({ url, locals: { supabase, getSession } }) => {
-  const { data: symbol } = await supabase.from('symbols').select('index').limit(1);
+export const load = async ({ url, locals: { cmsAdmin, getSession } }) => {
+  const symbol = await getSymbol();
 
   // Check for database misconfigurations
   if (url.pathname !== '/update-notice' && url.pathname !== '/auth') {

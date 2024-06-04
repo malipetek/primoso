@@ -2,7 +2,7 @@
   import Spinner from '$lib/ui/Spinner.svelte'
   import Switch from '$lib/ui/Switch.svelte'
   import PrimaryButton from '$lib/ui/PrimaryButton.svelte'
-  import { sites } from '$lib/actions'
+  import { sites } from '$lib/cmsprovider/actions'
   import { hide } from '$lib/components/Modal.svelte'
 
   export let site
